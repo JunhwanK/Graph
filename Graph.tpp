@@ -140,3 +140,114 @@ void Graph<Node, Node_id, Dist_type, Comp>::remove_all_edges() {
 		}
 	}
 }
+
+template <typename Node, typename Node_id, typename Dist_type, typename Comp>
+Dist_type Graph<Node, Node_id, Dist_type, Comp>::find_MST(std::vector<std::pair<Node*, Node*> > &edges,
+														bool record_edges) {
+
+	Dist_type total_dist = 0;
+
+	size_t num_nodes = nodes.size();
+	std::vector<MST_Location> MST;
+	MST.resize(num_nodes, MST_Location{init_val, false, nullptr});
+
+	//add first node into MST
+	MST_Location &first = MST.front();
+	first.distance= 0;
+	first.visited = true;
+
+	//set first node as the node newly added to MST
+	size_t newly_added = 0;
+
+	for (size_t i = 1; i < num_nodes; ++i) {
+		Dist_type closest_dist = init_val;
+		size_t closest_node = 0; //place holder, will always be assigned new value
+
+		// update distance changes due to newly_added node
+		switch(type) {
+			case GraphType::Dense: {
+				//for every node other than the first
+				for (size_t j = 1; j < num_nodes; ++j) {
+					// if visited, skip
+					MST_Location &other = MST[j];
+					if (other.visited) {
+						continue;
+					}
+
+					Dist_type dist = other.distance;
+					Dist_type new_dist = adj_mat[newly_added][j];
+					if (new_dist < dist) {
+						other.distance = new_dist;
+						other.precede = nodes[newly_added];
+						dist = new_dist;
+					}
+					
+					// update closest_dist and closest_node
+					if (dist < closest_dist) {
+						closest_dist = dist;
+						closest_node = j;
+					}
+				}
+			}
+			break;
+			case GraphType::Sparse: {
+				//for every node connected to newly_added node
+				const Node_id &newly_added_id = nodes[newly_added]->id;
+				const auto &connections = adj_list[newly_added_id];
+				for (auto it = connections.begin(); it != connections.end(); ++it) {
+					const Node_id &other_id = it->first;
+					size_t other_ind = nodes_look_up[other_id];
+
+					// if visited, skip
+					MST_Location &other = MST[other_ind];
+					if (other.visited) {
+						continue;
+					}
+					
+					Dist_type dist = other.distance;
+					Dist_type new_dist = it->second;
+					if (new_dist < dist) {
+						other.distance = new_dist;
+						other.precede = nodes[newly_added];
+						dist = new_dist;
+					}
+				}
+
+				// update closest_dist and closest_node
+				for (size_t i = 1; i < num_nodes; ++i) {
+					// if visited, skip
+					MST_Location &current = MST[i];
+					if (current.visited) {
+						continue;
+					}
+
+					Dist_type dist = current.distance;
+					if (dist < closest_dist) {
+						closest_dist = dist;
+						closest_node = i;
+					}	
+				}
+			}
+		}
+
+		// add closest to MST, update 'newly_added' and total_dist
+		MST[closest_node].visited = true;
+		newly_added = closest_node;
+		total_dist += closest_dist;
+	}
+
+	if (record_edges) {
+		for (size_t i = 1; i < num_nodes; ++i) {
+			edges.emplace_back(nodes[i], MST[i].precede);
+		}
+	}
+
+	return total_dist;
+}
+
+
+template <typename Node, typename Node_id, typename Dist_type, typename Comp>
+Dist_type Graph<Node, Node_id, Dist_type, Comp>::find_MST() {
+	std::vector<std::pair<Node*, Node*>> temp;
+	return find_MST(temp, false);
+}

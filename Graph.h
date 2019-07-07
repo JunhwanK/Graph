@@ -25,6 +25,10 @@ public:
 
 	void remove_all_edges();
 
+	Dist_type find_MST(std::vector<std::pair<Node*, Node*> > &edges, bool record_edges = true);
+
+	Dist_type find_MST();
+
 private:
 	std::vector<Node*> nodes;
 	std::unordered_map<Node_id, size_t> nodes_look_up;
@@ -37,6 +41,12 @@ private:
 	Comp comp;
 
 	void expand_adj_mat();
+
+	struct MST_Location {
+		Dist_type distance;
+		bool visited;
+		Node* precede;
+	};
 };
 
 #include "Graph.tpp"
