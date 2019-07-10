@@ -298,6 +298,7 @@ bool Graph<Node, Node_id, Dist_type, Comp>::is_complete() {
 				}
 			}
 		}
+		break;
 		case GraphType::Sparse: {
 			for (auto it = adj_list.begin(); it != adj_list.end(); ++it) {
 				if (it->second.size() != num_nodes-1) {
@@ -305,5 +306,7 @@ bool Graph<Node, Node_id, Dist_type, Comp>::is_complete() {
 				}
 			}
 		}
+		break;
 	}
+	return true;
 }
