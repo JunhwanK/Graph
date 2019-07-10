@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <unordered_map>
-#include <limits> //numeric_limits<double>::infinity
 #include <utility> //pair, make_pair()
 
 enum class GraphType {Dense, Sparse};
@@ -11,9 +10,7 @@ enum class GraphType {Dense, Sparse};
 template <typename Node, typename Node_id, typename Dist_type, typename Comp>
 class Graph {
 public:
-	Graph(GraphType type_in,
-		  Dist_type init_val_in = std::numeric_limits<double>::infinity(),
-		  int num_nodes=0);
+	Graph(GraphType type_in, Dist_type init_val_in, int num_nodes=0);
 
 	bool add_node(Node* new_node);
 
@@ -29,7 +26,7 @@ public:
 
 	Dist_type find_MST();
 
-private:
+//private:
 	std::vector<Node*> nodes;
 	std::unordered_map<Node_id, size_t> nodes_look_up;
 	

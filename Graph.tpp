@@ -20,9 +20,8 @@ bool Graph<Node, Node_id, Dist_type, Comp>::add_node(Node* new_node) {
 
 template <typename Node, typename Node_id, typename Dist_type, typename Comp>
 void Graph<Node, Node_id, Dist_type, Comp>::add_edge(const Node_id &left_id, const Node_id &right_id) {
-	unsigned left_ind = nodes_look_up[left_id];
-	unsigned right_ind = nodes_look_up[right_id];
-	size_t num_nodes = nodes.size();
+	size_t left_ind = nodes_look_up[left_id];
+	size_t right_ind = nodes_look_up[right_id];
 	switch(type) {
 		case GraphType::Dense: {
 			expand_adj_mat();
@@ -37,9 +36,9 @@ void Graph<Node, Node_id, Dist_type, Comp>::add_edge(const Node_id &left_id, con
 					return;
 				}
 			}
-			left_list.push_back(right_id, dist);
+			left_list.emplace_back(right_id, dist);
 			auto &right_list = adj_list[right_id];
-			right_list.push_back(left_id, dist);
+			right_list.emplace_back(left_id, dist);
 			break;
 		}
 	}
@@ -89,8 +88,8 @@ void Graph<Node, Node_id, Dist_type, Comp>::expand_adj_mat() {
 
 template <typename Node, typename Node_id, typename Dist_type, typename Comp>
 void Graph<Node, Node_id, Dist_type, Comp>::remove_edge(const Node_id &left_id, const Node_id &right_id) {
-	unsigned left_ind = nodes_look_up[left_id];
-	unsigned right_ind = nodes_look_up[right_id];
+	size_t left_ind = nodes_look_up[left_id];
+	size_t right_ind = nodes_look_up[right_id];
 	switch(type) {
 		case GraphType::Dense: {
 			adj_mat[left_ind][right_ind] = adj_mat[right_ind][left_ind] = init_val;
@@ -176,14 +175,16 @@ Dist_type Graph<Node, Node_id, Dist_type, Comp>::find_MST(std::vector<std::pair<
 
 					Dist_type dist = other.distance;
 					Dist_type new_dist = adj_mat[newly_added][j];
-					if (new_dist < dist) {
+					//if next_dist < dist
+					if (comp(new_dist, dist)) {
 						other.distance = new_dist;
 						other.precede = nodes[newly_added];
 						dist = new_dist;
 					}
 					
 					// update closest_dist and closest_node
-					if (dist < closest_dist) {
+					//if dist < closest_dist
+					if (comp(dist, closest_dist)) {
 						closest_dist = dist;
 						closest_node = j;
 					}
@@ -206,7 +207,8 @@ Dist_type Graph<Node, Node_id, Dist_type, Comp>::find_MST(std::vector<std::pair<
 					
 					Dist_type dist = other.distance;
 					Dist_type new_dist = it->second;
-					if (new_dist < dist) {
+					//if new_dist < dist 
+					if (comp(new_dist, dist)) {
 						other.distance = new_dist;
 						other.precede = nodes[newly_added];
 						dist = new_dist;
@@ -222,7 +224,8 @@ Dist_type Graph<Node, Node_id, Dist_type, Comp>::find_MST(std::vector<std::pair<
 					}
 
 					Dist_type dist = current.distance;
-					if (dist < closest_dist) {
+					//if dist < closest_dist 
+					if (comp(dist, closest_dist)) {
 						closest_dist = dist;
 						closest_node = i;
 					}	
