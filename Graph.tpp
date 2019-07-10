@@ -20,19 +20,27 @@ bool Graph<Node, Node_id, Dist_type, Comp>::add_node(Node* new_node) {
 
 template <typename Node, typename Node_id, typename Dist_type, typename Comp>
 void Graph<Node, Node_id, Dist_type, Comp>::add_edge(const Node_id &left_id, const Node_id &right_id) {
-	size_t left_ind = nodes_look_up[left_id];
-	size_t right_ind = nodes_look_up[right_id];
+	auto left_it = nodes_look_up.find(left_id);
+	auto right_it = nodes_look_up.find(right_id);
+	if (left_it == nodes_look_up.end()) {
+		throw left_id;
+	} else if (right_it == nodes_look_up.end()) {
+		throw right_id;
+	}
+
+	size_t left_ind = left_it->second;
+	size_t right_ind = right_it->second;
 	switch(type) {
 		case GraphType::Dense: {
 			expand_adj_mat();
-			adj_mat[right_ind][left_ind] = adj_mat[left_ind][right_ind] = comp(nodes[right_ind], nodes[left_ind]);
+			adj_mat[right_ind][left_ind] = adj_mat[left_ind][right_ind] = comp(nodes[left_ind], nodes[right_ind]);
 			break;
 		}
 		case GraphType::Sparse: {
-			Dist_type dist = comp(nodes[right_ind], nodes[left_ind]);
+			Dist_type dist = comp(nodes[left_ind], nodes[right_ind]);
 			auto &left_list = adj_list[left_id];
 			for (auto it = left_list.begin(); it != left_list.end(); ++it) {
-				if (it->first == right_ind) {
+				if (it->first == right_id) {
 					return;
 				}
 			}
@@ -88,8 +96,16 @@ void Graph<Node, Node_id, Dist_type, Comp>::expand_adj_mat() {
 
 template <typename Node, typename Node_id, typename Dist_type, typename Comp>
 void Graph<Node, Node_id, Dist_type, Comp>::remove_edge(const Node_id &left_id, const Node_id &right_id) {
-	size_t left_ind = nodes_look_up[left_id];
-	size_t right_ind = nodes_look_up[right_id];
+	auto left_it = nodes_look_up.find(left_id);
+	auto right_it = nodes_look_up.find(right_id);
+	if (left_it == nodes_look_up.end()) {
+		throw left_id;
+	} else if (right_it == nodes_look_up.end()) {
+		throw right_id;
+	}
+
+	size_t left_ind = left_it->second;
+	size_t right_ind = right_it->second;
 	switch(type) {
 		case GraphType::Dense: {
 			adj_mat[left_ind][right_ind] = adj_mat[right_ind][left_ind] = init_val;
@@ -99,7 +115,7 @@ void Graph<Node, Node_id, Dist_type, Comp>::remove_edge(const Node_id &left_id, 
 			bool found_edge = false;
 			auto &left_list = adj_list[left_id];
 			for (auto it = left_list.begin(); it != left_list.end(); ++it) {
-				if (it->first == right_ind) {
+				if (it->first == right_id) {
 					left_list.erase(it);
 					found_edge = true;
 					break;
@@ -108,7 +124,7 @@ void Graph<Node, Node_id, Dist_type, Comp>::remove_edge(const Node_id &left_id, 
 			if (found_edge) {
 				auto &right_list = adj_list[right_id];
 				for (auto it = right_list.begin(); it != right_list.end(); ++it) {
-					if (it->first == left_ind) {
+					if (it->first == left_id) {
 						right_list.erase(it);
 						break;
 					}
@@ -230,7 +246,13 @@ Dist_type Graph<Node, Node_id, Dist_type, Comp>::find_MST(std::vector<std::pair<
 						closest_node = i;
 					}	
 				}
-			}
+			break;
+			} //case
+		} //switch
+
+		//if closest node is not actually connected to current MST
+		if (comp(closest_dist) == false) {
+			throw "MST: missing edge";
 		}
 
 		// add closest to MST, update 'newly_added' and total_dist
@@ -253,4 +275,35 @@ template <typename Node, typename Node_id, typename Dist_type, typename Comp>
 Dist_type Graph<Node, Node_id, Dist_type, Comp>::find_MST() {
 	std::vector<std::pair<Node*, Node*>> temp;
 	return find_MST(temp, false);
+}
+
+
+template <typename Node, typename Node_id, typename Dist_type, typename Comp>
+bool Graph<Node, Node_id, Dist_type, Comp>::is_complete() {
+	size_t num_nodes = nodes.size();
+	switch(type) {
+		case GraphType::Dense: {
+			//check connection to self
+			for (unsigned i = 0; i < num_nodes; ++i) {
+				if (comp(adj_mat[i][i])) {
+					return false;
+				}
+			}
+			//check connection to all others
+			for (unsigned row = 0; row < num_nodes; ++row) {
+				for (unsigned col = row+1; col < num_nodes; ++col) {
+					if (!comp(adj_mat[row][col])) {
+						return false;
+					}
+				}
+			}
+		}
+		case GraphType::Sparse: {
+			for (auto it = adj_list.begin(); it != adj_list.end(); ++it) {
+				if (it->second.size() != num_nodes-1) {
+					return false;
+				}
+			}
+		}
+	}
 }

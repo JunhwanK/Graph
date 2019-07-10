@@ -3,7 +3,9 @@
 
 #include <vector>
 #include <unordered_map>
+#include <string>
 #include <utility> //pair, make_pair()
+#include <iostream>
 
 enum class GraphType {Dense, Sparse};
 
@@ -26,7 +28,9 @@ public:
 
 	Dist_type find_MST();
 
-//private:
+	bool is_complete();
+
+private:
 	std::vector<Node*> nodes;
 	std::unordered_map<Node_id, size_t> nodes_look_up;
 	
